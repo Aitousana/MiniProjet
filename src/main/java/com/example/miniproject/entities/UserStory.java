@@ -25,22 +25,24 @@ public class UserStory implements Serializable {
     @ManyToOne(optional = false)
     @JoinColumn(name = "epic_id")
     private Epic epic;
-    @NotNull
-    private String Critere_Acceptation;
+
+    @OneToOne(optional = false, cascade = CascadeType.ALL)
+    @JoinColumn(name = "critere_acceptation_id", nullable = false)
+    private CritereAcceptation critereAcceptation;
 
 
     public UserStory() {
     }
 
     // Constructeur avec tous les paramètres
-    public UserStory(int id, String title, String description, Priorite priorite, Statut statut, Epic epic, String Critere_Acceptation) {
+    public UserStory(int id, String title, String description, Priorite priorite, Statut statut, Epic epic, CritereAcceptation  critereAcceptation) {
         this.id = id;
         this.title = title;
         this.description = description;
         this.priorite = priorite;
         this.statut = statut;
         this.epic = epic;
-        this.Critere_Acceptation = Critere_Acceptation;
+        this.critereAcceptation = critereAcceptation;
     }
 
     // Getters et Setters
@@ -91,11 +93,11 @@ public class UserStory implements Serializable {
     public void setEpic(Epic epic) {
         this.epic = epic;
     }
-    public String getCritere_Acceptation() {
-        return Critere_Acceptation;
+    public CritereAcceptation getCritere_Acceptation() {
+        return critereAcceptation;
     }
-    public void setCritere_Acceptation(String Critere_Acceptation) {
-        this.Critere_Acceptation = Critere_Acceptation;
+    public void setCritere_Acceptation(CritereAcceptation  Critere_Acceptation) {
+        this.critereAcceptation = Critere_Acceptation;
     }
 
     // Enum Priorite

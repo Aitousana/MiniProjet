@@ -1,6 +1,7 @@
 package com.example.miniproject.Services;
 
 import com.example.miniproject.Repositories.UserStoryRepo;
+import com.example.miniproject.entities.CritereAcceptation;
 import com.example.miniproject.entities.UserStory;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
@@ -59,17 +60,22 @@ public class UserStoryServiceImpl implements UserStoryService {
         UserStory existingUserStory = userStoryRepo.findById(userStory.getId())
                 .orElseThrow(() -> new EntityNotFoundException("Aucune User Story trouvée avec cet ID."));
 
-        // Vérifie que le changement de statut est valide
+        // Vérifier si la UserStory passe au statut TERMINEE
+        if (userStory.getStatut() == UserStory.Statut.TERMINEE) {
+            CritereAcceptation critere = existingUserStory.getCritere_Acceptation();
+            if (critere == null || critere.getStatus() != CritereAcceptation.Status.VALID) {
+                throw new IllegalStateException("Impossible de terminer la User Story : le critère d'acceptation n'est pas valide.");
+            }
+        }
+
+        // Vérifier si le statut est modifié
         if (existingUserStory.getStatut() != userStory.getStatut()) {
-            // Si la User Story n'est pas à l'état "A_FAIRE", on vérifie si la transition est valide
             if (existingUserStory.getStatut() != UserStory.Statut.A_FAIRE) {
                 if (!canMoveToStatut(existingUserStory, userStory.getStatut())) {
                     throw new IllegalStateException("Transition de statut non autorisée.");
                 }
             }
-            // Modifie uniquement le statut si la transition est valide
             existingUserStory.setStatut(userStory.getStatut());
-
         } else {
             // Si la User Story est "A_FAIRE", on peut modifier d'autres champs
             if (existingUserStory.getStatut() == UserStory.Statut.A_FAIRE) {
@@ -82,9 +88,9 @@ public class UserStoryServiceImpl implements UserStoryService {
             }
         }
 
-
         userStoryRepo.save(existingUserStory);
     }
+
 
 }
 
