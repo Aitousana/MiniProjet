@@ -1,10 +1,11 @@
 package com.example.miniproject.Services;
 
 import com.example.miniproject.Repositories.UserStoryRepo;
-import com.example.miniproject.entities.CritereAcceptation;
 import com.example.miniproject.entities.UserStory;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class UserStoryServiceImpl implements UserStoryService {
@@ -16,11 +17,25 @@ public class UserStoryServiceImpl implements UserStoryService {
 
     @Override
     public void addUserStory(UserStory userStory) {
-        if (userStory.getEpic() == null){
+        if (userStory.getEpic() == null) {
             throw new EntityNotFoundException("L'Epic associé à cette User Story n'existe pas.");
         }
+
+        // Vérification du format de la description
+        String descriptionPattern = "(?i)^en tant que.*,\s*je veux.*,\s*afin.*";
+        if (userStory.getDescription() == null || !userStory.getDescription().matches(descriptionPattern)) {
+            throw new IllegalArgumentException("La description doit être sous la forme : 'En tant que..., je veux..., afin ...'");
+        }
+
+        // Vérification du format du critère d'acceptation
+        String gherkinPattern = "(?i)^Given .*\\s*When .*\\s*Then .*";
+        if (userStory.getCritere_Acceptation() == null || !userStory.getCritere_Acceptation().matches(gherkinPattern)) {
+            throw new IllegalArgumentException("Le critère d'acceptation doit être sous la forme Gherkin complète : 'Given ..., When ..., Then ...'");
+        }
+
         userStoryRepo.save(userStory);
     }
+
 
     @Override
     public void deleteUserStory(UserStory userStory) {
@@ -60,25 +75,29 @@ public class UserStoryServiceImpl implements UserStoryService {
         UserStory existingUserStory = userStoryRepo.findById(userStory.getId())
                 .orElseThrow(() -> new EntityNotFoundException("Aucune User Story trouvée avec cet ID."));
 
-        // Vérifier si la UserStory passe au statut TERMINEE
-        if (userStory.getStatut() == UserStory.Statut.TERMINEE) {
-            CritereAcceptation critere = existingUserStory.getCritere_Acceptation();
-            if (critere == null || critere.getStatus() != CritereAcceptation.Status.VALID) {
-                throw new IllegalStateException("Impossible de terminer la User Story : le critère d'acceptation n'est pas valide.");
-            }
-        }
-
         // Vérifier si le statut est modifié
         if (existingUserStory.getStatut() != userStory.getStatut()) {
-            if (existingUserStory.getStatut() != UserStory.Statut.A_FAIRE) {
+
                 if (!canMoveToStatut(existingUserStory, userStory.getStatut())) {
                     throw new IllegalStateException("Transition de statut non autorisée.");
-                }
+
             }
             existingUserStory.setStatut(userStory.getStatut());
         } else {
             // Si la User Story est "A_FAIRE", on peut modifier d'autres champs
             if (existingUserStory.getStatut() == UserStory.Statut.A_FAIRE) {
+                // Vérification du format de la description
+                String descriptionPattern = "(?i)^en tant que.*,\s*je veux.*,\s*afin.*";
+                if (userStory.getDescription() == null || !userStory.getDescription().matches(descriptionPattern)) {
+                    throw new IllegalArgumentException("La description doit être sous la forme : 'En tant que..., je veux..., afin ...'");
+                }
+
+                // Vérification du format du critère d'acceptation
+                String gherkinPattern = "(?i)^Given .*\\s*When .*\\s*Then .*";
+                if (userStory.getCritere_Acceptation() == null || !userStory.getCritere_Acceptation().matches(gherkinPattern)) {
+                    throw new IllegalArgumentException("Le critère d'acceptation doit être sous la forme Gherkin complète : 'Given ..., When ..., Then ...'");
+                }
+
                 existingUserStory.setTitle(userStory.getTitle());
                 existingUserStory.setDescription(userStory.getDescription());
                 existingUserStory.setPriorite(userStory.getPriorite());
@@ -89,6 +108,16 @@ public class UserStoryServiceImpl implements UserStoryService {
         }
 
         userStoryRepo.save(existingUserStory);
+    }
+
+    @Override
+    public List<UserStory> getUserStory() {
+        return userStoryRepo.findAll();
+    }
+
+    @Override
+    public UserStory getUserStoryById(int id) {
+        return userStoryRepo.findById(id).orElse(null);
     }
 
 

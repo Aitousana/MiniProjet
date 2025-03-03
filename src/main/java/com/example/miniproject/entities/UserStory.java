@@ -26,16 +26,18 @@ public class UserStory implements Serializable {
     @JoinColumn(name = "epic_id")
     private Epic epic;
 
-    @OneToOne(optional = false, cascade = CascadeType.ALL)
-    @JoinColumn(name = "critere_acceptation_id", nullable = false)
-    private CritereAcceptation critereAcceptation;
+    @NotNull
+    private String critereAcceptation;
+    @ManyToOne
+    @JoinColumn(name="ProductBacklog")
+    private ProductBacklog productBacklog;
 
 
     public UserStory() {
     }
 
     // Constructeur avec tous les paramètres
-    public UserStory(int id, String title, String description, Priorite priorite, Statut statut, Epic epic, CritereAcceptation  critereAcceptation) {
+    public UserStory(int id, String title, String description, Priorite priorite, Statut statut, Epic epic, String critereAcceptation) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -89,14 +91,20 @@ public class UserStory implements Serializable {
     public Epic getEpic() {
         return epic;
     }
+    public ProductBacklog getProductBacklog() {
+        return productBacklog;
+    }
+    public void setProductBacklog(ProductBacklog productBacklog) {
+        this.productBacklog = productBacklog;
+    }
 
     public void setEpic(Epic epic) {
         this.epic = epic;
     }
-    public CritereAcceptation getCritere_Acceptation() {
+    public String getCritere_Acceptation() {
         return critereAcceptation;
     }
-    public void setCritere_Acceptation(CritereAcceptation  Critere_Acceptation) {
+    public void setCritere_Acceptation(String  Critere_Acceptation) {
         this.critereAcceptation = Critere_Acceptation;
     }
 
