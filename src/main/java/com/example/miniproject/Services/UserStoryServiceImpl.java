@@ -10,15 +10,24 @@ import java.util.List;
 @Service
 public class UserStoryServiceImpl implements UserStoryService {
     private final UserStoryRepo userStoryRepo;
+    private final ProductBaclogService productBaclogService;
+    private final UserStoryService userStoryService;
+    private final EpicService epicService;
 
-    public UserStoryServiceImpl(UserStoryRepo userStoryRepo) {
+    public UserStoryServiceImpl(UserStoryRepo userStoryRepo, ProductBaclogService productBaclogService, UserStoryService userStoryService, EpicService epicService) {
         this.userStoryRepo = userStoryRepo;
+        this.productBaclogService=productBaclogService;
+        this.userStoryService = userStoryService;
+        this.epicService = epicService;
     }
 
     @Override
     public void addUserStory(UserStory userStory) {
         if (userStory.getEpic() == null) {
             throw new EntityNotFoundException("L'Epic associé à cette User Story n'existe pas.");
+        }
+        if (userStory.getProductBacklog()== null) {
+            throw new EntityNotFoundException("Product Backlog associé à cette User Story n'existe pas.");
         }
 
         // Vérification du format de la description
@@ -34,6 +43,9 @@ public class UserStoryServiceImpl implements UserStoryService {
         }
 
         userStoryRepo.save(userStory);
+        epicService.UpdateEpic(userStory.getEpic());
+        productBaclogService.updateProductBacklog(userStory.getProductBacklog());
+
     }
 
 
@@ -46,6 +58,7 @@ public class UserStoryServiceImpl implements UserStoryService {
             throw new IllegalStateException("Impossible de Supprimer une User Story  à l'état 'Terminé'.");
         }
         userStoryRepo.deleteById(userStory.getId());
+
 
     }
 
@@ -108,6 +121,8 @@ public class UserStoryServiceImpl implements UserStoryService {
         }
 
         userStoryRepo.save(existingUserStory);
+        epicService.UpdateEpic(userStory.getEpic());
+        productBaclogService.updateProductBacklog(userStory.getProductBacklog());
     }
 
     @Override
@@ -119,7 +134,17 @@ public class UserStoryServiceImpl implements UserStoryService {
     public UserStory getUserStoryById(int id) {
         return userStoryRepo.findById(id).orElse(null);
     }
+      @Override
+      public void delateAllUserStory(List<UserStory> userStoryList){
+        if(userStoryList.size()==0){
+            throw new NullPointerException("aucun UserStory Stockée");
+        }
+        for(UserStory userStory : userStoryList){
+            userStoryService.deleteUserStory(userStory);
+        }
 
+
+      }
 
 }
 

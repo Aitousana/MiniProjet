@@ -1,5 +1,6 @@
 package com.example.miniproject.Services;
 
+import com.example.miniproject.entities.Epic;
 import com.example.miniproject.entities.ProductBacklog;
 import com.example.miniproject.entities.UserStory;
 
@@ -10,9 +11,10 @@ public interface ProductBaclogService {
 public  ProductBacklog addProductBacklog(ProductBacklog backlog);
    public List<ProductBacklog> getAllProductBacklogs();
     public Optional<ProductBacklog> getProductBacklogById(int id);
-    public ProductBacklog updateProductBacklog(int id, ProductBacklog backlog);
-    public void deleteProductBacklog(int id);
-    public ProductBacklog removeUserStoryFromBacklog(int backlogId, int userStoryId);
-    public ProductBacklog addUserStoryToBacklog(int backlogId, UserStory userStory);
+ public ProductBacklog updateProductBacklog(ProductBacklog backlog);
+ public void deleteProductBacklog(ProductBacklog backlog);
+
+
+
 
 }

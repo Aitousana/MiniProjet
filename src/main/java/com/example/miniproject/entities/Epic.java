@@ -15,6 +15,9 @@ public class Epic {
 
     @OneToMany(mappedBy = "epic", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserStory> userStories;
+    @ManyToOne
+    @JoinColumn(name = "ProductBacklog")
+    private ProductBacklog productBacklog;
 
     // Constructeur par défaut
     public Epic() {
@@ -50,5 +53,11 @@ public class Epic {
 
     public void setUserStories(List<UserStory> userStories) {
         this.userStories = userStories;
+    }
+    public ProductBacklog getProductBacklog() {
+        return productBacklog;
+    }
+    public void setProductBacklog(ProductBacklog productBacklog) {
+        this.productBacklog = productBacklog;
     }
 }

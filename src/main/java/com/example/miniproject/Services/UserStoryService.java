@@ -8,6 +8,7 @@ public interface UserStoryService {
     public void addUserStory(UserStory userStory);
     public void deleteUserStory(UserStory userStory);
     public void updateUserStory(UserStory userStory);
+    public void delateAllUserStory(List<UserStory> userStoryList);
     public List<UserStory> getUserStory();
     public UserStory getUserStoryById(int id);
 
