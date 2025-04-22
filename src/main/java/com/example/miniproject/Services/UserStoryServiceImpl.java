@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -39,69 +40,63 @@ public class UserStoryServiceImpl implements UserStoryService {
     public void addUserStory(UserStoryDTO userStoryDTO) {
         Objects.requireNonNull(userStoryDTO, "UserStoryDTO ne peut pas être null");
 
+        // Mapper DTO → Entity
         UserStory userStory = UserStoryMapper.INSTANCE.toEntity(userStoryDTO);
 
+        // Vérification Epic
         if (userStoryDTO.getEpicId() == 0) {
             throw new EntityNotFoundException("L'Epic associé à cette User Story est requis.");
         }
         userStory.setEpic(epicService.getEpicEntityById(userStoryDTO.getEpicId()));
 
+        // Vérification Product Backlog
         if (userStoryDTO.getProductBacklogId() == 0) {
             throw new EntityNotFoundException("Le Product Backlog associé à cette User Story est requis.");
         }
         userStory.setProductBacklog(productBacklogService.getProductBacklogEntityById(userStoryDTO.getProductBacklogId()));
 
+        // Vérification Sprint Backlog
         if (userStoryDTO.getSprintBacklogId() != 0) {
             SprintBacklog sprint = sprintBacklogService.getSprintBacklogEntityById(userStoryDTO.getSprintBacklogId());
             int currentLoad = sprint.getUserStories().stream().mapToInt(UserStory::getComplexity).sum();
+
             if (currentLoad + userStoryDTO.getComplexity() > sprint.getCapacity()) {
                 throw new IllegalStateException("La capacité du Sprint est dépassée");
             }
             userStory.setSprintBacklog(sprint);
         }
 
-        String descriptionPattern = "(?i)^en tant que.*,\s*je veux.*,\s*afin.*";
+        // Validation du format de description (forme "En tant que..., je veux..., afin de...")
+        String descriptionPattern = "(?i)^En tant que.*je veux.*afin.*";
         if (userStory.getDescription() == null || !userStory.getDescription().matches(descriptionPattern)) {
             throw new IllegalArgumentException("La description doit être sous la forme : 'En tant que..., je veux..., afin ...'");
         }
 
+        // Validation du critère d’acceptation (forme Gherkin)
         String gherkinPattern = "(?i)^Given .*\\s*When .*\\s*Then .*";
         if (userStory.getCritereAcceptation() == null || !userStory.getCritereAcceptation().matches(gherkinPattern)) {
             throw new IllegalArgumentException("Le critère d'acceptation doit être sous la forme Gherkin : 'Given ..., When ..., Then ...'");
         }
 
-//        if (userStoryDTO.getBusinessValue() < 0 || userStoryDTO.getBusinessValue() > 10) {
-//            throw new IllegalArgumentException("Business Value doit être entre 0 et 10");
-//        }
-//        if (userStoryDTO.getUrgency() < 0 || userStoryDTO.getUrgency() > 10) {
-//            throw new IllegalArgumentException("Urgency doit être entre 0 et 10");
-//        }
-//        if (userStoryDTO.getComplexity() < 0 || userStoryDTO.getComplexity() > 13) {
-//            throw new IllegalArgumentException("Complexity doit être entre 0 et 13");
-//        }
-//        if (userStoryDTO.getRisk() < 0 || userStoryDTO.getRisk() > 10) {
-//            throw new IllegalArgumentException("Risk doit être entre 0 et 10");
-//        }
-//        if (userStoryDTO.getMoscowPriority() != null &&
-//                !List.of("Must", "Should", "Could", "Won't").contains(userStoryDTO.getMoscowPriority())) {
-//            throw new IllegalArgumentException("Moscow Priority doit être 'Must', 'Should', 'Could', ou 'Won't'");
-//        }
-//        if (userStoryDTO.getPrioritizationMethod() != null &&
-//                !List.of("MoSCoW", "ValueVsEffort", "WSJF").contains(userStoryDTO.getPrioritizationMethod())) {
-//            throw new IllegalArgumentException("Prioritization Method doit être 'MoSCoW', 'ValueVsEffort', ou 'WSJF'");
-//        }
-
+        // Sauvegarde dans la base
         UserStory savedUserStory = userStoryRepo.save(userStory);
 
+        // MAJ Epic
         EpicDTO epicDTO = epicService.getEpicById(savedUserStory.getEpic().getId());
-        epicDTO.getUserStoryIds().add(savedUserStory.getId());
+        List<Integer> epicUserStoryIds = new ArrayList<>(epicDTO.getUserStoryIds()); // rendre modifiable
+        epicUserStoryIds.add(savedUserStory.getId());
+        epicDTO.setUserStoryIds(epicUserStoryIds);
         epicService.updateEpic(epicDTO);
 
+        // MAJ ProductBacklog
         ProductBacklogDTO backlogDTO = productBacklogService.getProductBacklogById(savedUserStory.getProductBacklog().getBacklogId())
                 .orElseThrow(() -> new EntityNotFoundException("ProductBacklog non trouvé"));
-        backlogDTO.getUserStoryIds().add(savedUserStory.getId());
+        List<Integer> backlogUserStoryIds = new ArrayList<>(backlogDTO.getUserStoryIds()); // rendre modifiable
+        backlogUserStoryIds.add(savedUserStory.getId());
+        backlogDTO.setUserStoryIds(backlogUserStoryIds);
         productBacklogService.updateProductBacklog(backlogDTO);
     }
+
 
     @Override
     public void deleteUserStory(UserStoryDTO userStoryDTO) {

@@ -3,6 +3,7 @@ package com.example.miniproject.Services;
 import com.example.miniproject.DTO.SprintBacklogDTO;
 import com.example.miniproject.Repositories.SprintBacklogRepo;
 import com.example.miniproject.entities.SprintBacklog;
+import com.example.miniproject.entities.UserStory;
 import com.example.miniproject.mapper.SprintBacklogMapper;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
@@ -23,8 +24,20 @@ public class SprintBacklogServiceImpl implements SprintBacklogService {
         if (sprintBacklogDTO.getStartDate().isAfter(sprintBacklogDTO.getEndDate())) {
             throw new IllegalArgumentException("La date de début doit être avant la date de fin");
         }
+
+        // Mapper DTO vers Entity
         SprintBacklog sprintBacklog = SprintBacklogMapper.INSTANCE.toEntity(sprintBacklogDTO);
+
+        // Enregistrer le SprintBacklog
         SprintBacklog savedSprint = sprintBacklogRepo.save(sprintBacklog);
+
+        // Associer chaque UserStory au SprintBacklog nouvellement créé
+        if (savedSprint.getUserStories() != null) {
+            for (UserStory userStory : savedSprint.getUserStories()) {
+                userStory.setSprintBacklog(savedSprint); // Liaison côté UserStory
+            }
+        }
+
         return SprintBacklogMapper.INSTANCE.toDTO(savedSprint);
     }
 
